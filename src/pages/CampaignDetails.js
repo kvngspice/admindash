@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Container, Card, Row, Col, Badge, Alert, Button } from 'react-bootstrap';
 import { FaArrowLeft, FaUser, FaCalendar, FaDollarSign, FaBullseye, FaGlobe } from 'react-icons/fa';
+import config from "../config";
 
 const CampaignDetails = () => {
   const { id } = useParams();
@@ -10,22 +11,22 @@ const CampaignDetails = () => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    const fetchCampaignDetails = async () => {
+      try {
+        const response = await fetch(`${config.API_URL}/api/campaigns/${id}/`);
+        if (!response.ok) throw new Error('Failed to fetch campaign details');
+        const data = await response.json();
+        setCampaign(data);
+      } catch (error) {
+        console.error("Error fetching campaign details:", error);
+        setError(error.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchCampaignDetails();
   }, [id]);
-
-  const fetchCampaignDetails = async () => {
-    try {
-      const response = await fetch(`http://127.0.0.1:8000/api/admin/campaigns/${id}/`);
-      if (!response.ok) throw new Error('Failed to fetch campaign details');
-      const data = await response.json();
-      setCampaign(data);
-    } catch (error) {
-      console.error("Error fetching campaign details:", error);
-      setError(error.message);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   if (loading) return <div>Loading campaign details...</div>;
   if (error) return <Alert variant="danger">{error}</Alert>;

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Container, Form, Button, Alert } from "react-bootstrap";
+import config from "../config";
 
 const AdminEditInfluencer = ({ refreshInfluencers }) => {
   const { id } = useParams();
@@ -26,7 +27,7 @@ const AdminEditInfluencer = ({ refreshInfluencers }) => {
 
   useEffect(() => {
     // Fetch current influencer data
-    fetch(`http://127.0.0.1:8000/api/influencers/${id}/`)
+    fetch(`${config.API_URL}/api/influencers/${id}/`)
       .then((response) => response.json())
       .then((data) => {
         console.log("Fetched influencer data:", data);
@@ -69,10 +70,12 @@ const AdminEditInfluencer = ({ refreshInfluencers }) => {
       console.log("Sending update data:", dataToSend);
 
       // Use the correct endpoint URL
-      const response = await fetch(`http://127.0.0.1:8000/api/influencers/${id}/update/`, {
+      const response = await fetch(`${config.API_URL}/api/influencers/${id}/update/`, {
         method: "PUT",
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('adminToken')}`,
+          'Accept': 'application/json'
         },
         body: JSON.stringify(dataToSend)
       });

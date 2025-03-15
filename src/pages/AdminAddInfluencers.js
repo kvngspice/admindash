@@ -1,5 +1,6 @@
 import React, { useState, useRef } from "react";
 import { Container, Form, Button, Alert } from "react-bootstrap";
+import config from "../config";
 
 const AdminAddInfluencer = () => {
   const [influencerData, setInfluencerData] = useState({
@@ -49,10 +50,11 @@ const AdminAddInfluencer = () => {
 
       console.log("Sending data:", dataToSend);
 
-      const response = await fetch("http://127.0.0.1:8000/api/influencers/", {
+      const response = await fetch(`${config.API_URL}/api/influencers/`, {
         method: "POST",
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('adminToken')}`,
           'Accept': 'application/json'
         },
         body: JSON.stringify(dataToSend)

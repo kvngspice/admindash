@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { Container, Table, Button, Alert, Modal, Form, Row, Col, Badge, Card, ListGroup } from "react-bootstrap";
 import { FaEdit, FaTrash, FaInstagram, FaTiktok, FaYoutube, FaTwitter, FaFacebook, FaLinkedin, FaPinterest, FaSnapchat, FaTwitch, FaEye, FaExternalLinkAlt, FaPlus } from 'react-icons/fa';
+import { Link } from "react-router-dom";
+import config from "../config";
 
 const REGIONS = {
   'Nigeria': ['Lagos', 'Abuja', 'Port Harcourt', 'Kano', 'Ibadan', 'All Nigeria'],
@@ -36,22 +38,44 @@ const ManageInfluencers = () => {
   const [selectedCountry, setSelectedCountry] = useState('');
   const [showViewModal, setShowViewModal] = useState(false);
   const [viewInfluencer, setViewInfluencer] = useState(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [influencerToDelete, setInfluencerToDelete] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterPlatform, setFilterPlatform] = useState("");
 
   useEffect(() => {
     fetchInfluencers();
   }, []);
 
   const fetchInfluencers = async () => {
+    setLoading(true);
+    setError(null);
     try {
-      const response = await fetch("http://127.0.0.1:8000/api/admin/influencers/list/");
-      if (!response.ok) throw new Error('Failed to fetch influencers');
+      // First try the admin endpoint
+      let response;
+      try {
+        response = await fetch(`${config.API_URL}/api/admin/influencers/list/`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('adminToken')}`,
+            'Accept': 'application/json'
+          }
+        });
+      } catch (e) {
+        console.error("Error with admin endpoint, trying general endpoint:", e);
+        // If that fails, try the general endpoint
+        response = await fetch(`${config.API_URL}/api/influencers/`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('adminToken')}`,
+            'Accept': 'application/json'
+          }
+        });
+      }
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch influencers: ${response.status} ${response.statusText}`);
+      }
+      
       const data = await response.json();
-      
-      // Add detailed logging for each influencer's social_platforms
-      data.forEach(influencer => {
-        console.log(`Influencer ${influencer.name} social_platforms:`, influencer.social_platforms);
-      });
-      
       setInfluencers(data);
     } catch (error) {
       console.error("Error fetching influencers:", error);
@@ -61,18 +85,32 @@ const ManageInfluencers = () => {
     }
   };
 
-  const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this influencer?')) {
-      try {
-        const response = await fetch(`http://127.0.0.1:8000/api/admin/influencers/${id}/delete/`, {
-          method: 'DELETE'
-        });
-        if (!response.ok) throw new Error('Failed to delete influencer');
-        fetchInfluencers(); // Refresh the list
-      } catch (error) {
-        console.error("Error deleting influencer:", error);
-        setError(error.message);
+  const handleDeleteClick = (influencer) => {
+    setInfluencerToDelete(influencer);
+    setShowDeleteModal(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    try {
+      const response = await fetch(`${config.API_URL}/api/influencers/${influencerToDelete.id}/`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('adminToken')}`,
+          'Accept': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete influencer');
       }
+
+      // Remove the deleted influencer from the state
+      setInfluencers(influencers.filter(inf => inf.id !== influencerToDelete.id));
+      setShowDeleteModal(false);
+      setInfluencerToDelete(null);
+    } catch (error) {
+      console.error("Error deleting influencer:", error);
+      setError(error.message);
     }
   };
 
@@ -181,10 +219,11 @@ const ManageInfluencers = () => {
         twitter: formData.twitter_url
       });
 
-      const response = await fetch(`http://127.0.0.1:8000/api/admin/influencers/${selectedInfluencer.id}/edit/`, {
+      const response = await fetch(`${config.API_URL}/api/admin/influencers/${selectedInfluencer.id}/edit/`, {
         method: 'PUT',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
         },
         body: JSON.stringify(formData)
       });
@@ -418,87 +457,120 @@ const ManageInfluencers = () => {
     );
   };
 
+  // Filter influencers based on search term and platform filter
+  const filteredInfluencers = influencers.filter(influencer => {
+    const matchesSearch = searchTerm === "" || 
+      influencer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      influencer.social_media_handle?.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesPlatform = filterPlatform === "" || 
+      influencer.platform.toLowerCase() === filterPlatform.toLowerCase();
+    
+    return matchesSearch && matchesPlatform;
+  });
+
   if (loading) return <div>Loading influencers...</div>;
   if (error) return <Alert variant="danger">{error}</Alert>;
 
   return (
-    <Container className="mt-4">
-      <h2>Manage Influencers</h2>
-      
-      <Table striped bordered hover responsive>
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Platforms</th>
-            <th>Niche</th>
-            <th>Base Fee</th>
-            <th>Region</th>
-            <th>Demographics</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {influencers.map(influencer => {
-            console.log('Influencer data:', {
-              id: influencer.id,
-              name: influencer.name,
-              base_fee: influencer.base_fee,
-              type: typeof influencer.base_fee
-            });
-            
-            return (
-              <tr key={influencer.id}>
-                <td>
-                  <a 
-                    href="#" 
-                    onClick={(e) => {
-                      e.preventDefault();
-                      handleViewProfile(influencer);
-                    }}
-                    className="text-decoration-none"
-                  >
-                    {influencer.name}
-                  </a>
-                </td>
-                <td>{renderPlatformIcons(influencer)}</td>
-                <td>{influencer.niche}</td>
-                <td>
-                  ${typeof influencer.base_fee !== 'undefined' && influencer.base_fee !== null 
-                    ? parseFloat(influencer.base_fee).toLocaleString() 
-                    : '0'}
-                </td>
-                <td>{influencer.region}</td>
-                <td>{influencer.demography}</td>
-                <td>
-                  <Button 
-                    variant="info" 
-                    size="sm" 
-                    className="me-2"
-                    onClick={() => handleViewProfile(influencer)}
-                  >
-                    <FaEye /> View
-                  </Button>
-                  <Button 
-                    variant="primary" 
-                    size="sm" 
-                    className="me-2"
-                    onClick={() => handleEdit(influencer)}
-                  >
-                    <FaEdit /> Edit
-                  </Button>
-                  <Button 
-                    variant="danger" 
-                    size="sm"
-                    onClick={() => handleDelete(influencer.id)}
-                  >
-                    <FaTrash /> Delete
-                  </Button>
-                </td>
+    <Container className="py-4">
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <h2>Manage Influencers</h2>
+        <Link to="/admin/add-influencer">
+          <Button variant="primary">Add New Influencer</Button>
+        </Link>
+      </div>
+
+      {error && <Alert variant="danger">{error}</Alert>}
+
+      <div className="mb-4">
+        <div className="d-flex gap-3">
+          <Form.Control
+            type="text"
+            placeholder="Search by name or handle"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-50"
+          />
+          <Form.Select
+            value={filterPlatform}
+            onChange={(e) => setFilterPlatform(e.target.value)}
+            className="w-25"
+          >
+            <option value="">All Platforms</option>
+            <option value="Instagram">Instagram</option>
+            <option value="TikTok">TikTok</option>
+            <option value="YouTube">YouTube</option>
+            <option value="Twitter">Twitter</option>
+          </Form.Select>
+        </div>
+      </div>
+
+      {loading ? (
+        <div className="text-center py-4">
+          <Spinner animation="border" role="status">
+            <span className="visually-hidden">Loading...</span>
+          </Spinner>
+        </div>
+      ) : (
+        <Table responsive striped hover>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Name</th>
+              <th>Platform</th>
+              <th>Followers</th>
+              <th>Niche</th>
+              <th>Region</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredInfluencers.length === 0 ? (
+              <tr>
+                <td colSpan="7" className="text-center">No influencers found</td>
               </tr>
-            );
-          })}
-        </tbody>
-      </Table>
+            ) : (
+              filteredInfluencers.map(influencer => (
+                <tr key={influencer.id}>
+                  <td>{influencer.id}</td>
+                  <td>
+                    <div>{influencer.name}</div>
+                    <small className="text-muted">@{influencer.social_media_handle}</small>
+                  </td>
+                  <td>
+                    <Badge bg={
+                      influencer.platform === 'Instagram' ? 'danger' :
+                      influencer.platform === 'TikTok' ? 'dark' :
+                      influencer.platform === 'YouTube' ? 'danger' :
+                      'primary'
+                    }>
+                      {influencer.platform}
+                    </Badge>
+                  </td>
+                  <td>{influencer.followers_count?.toLocaleString()}</td>
+                  <td>{influencer.niche}</td>
+                  <td>{influencer.region}</td>
+                  <td>
+                    <div className="d-flex gap-2">
+                      <Link to={`/admin/influencers/${influencer.id}/edit`}>
+                        <Button variant="outline-primary" size="sm">Edit</Button>
+                      </Link>
+                      <Button 
+                        variant="outline-danger" 
+                        size="sm"
+                        onClick={() => handleDeleteClick(influencer)}
+                      >
+                        Delete
+                      </Button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </Table>
+      )}
 
       {/* View Profile Modal */}
       <Modal 
@@ -1154,6 +1226,25 @@ const ManageInfluencers = () => {
             </Form>
           )}
         </Modal.Body>
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Confirm Delete</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          Are you sure you want to delete the influencer "{influencerToDelete?.name}"?
+          This action cannot be undone.
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>
+            Cancel
+          </Button>
+          <Button variant="danger" onClick={handleDeleteConfirm}>
+            Delete
+          </Button>
+        </Modal.Footer>
       </Modal>
     </Container>
   );
