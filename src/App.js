@@ -1,21 +1,12 @@
 import React, { useState, useEffect } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { Container, Nav, Alert, Spinner, Form, Button, Card } from "react-bootstrap";
-import { BrowserRouter as Router, Routes, Route, Link, Navigate, useNavigate } from "react-router-dom";
-import AdminDashboard from "./pages/AdminDashboard";
-import ManageCampaigns from "./pages/ManageCampaigns";
-import ManageUsers from "./pages/ManageUsers";
-import AddInfluencer from "./pages/AddInfluencer";
-import BookingDetails from './pages/BookingDetails';
-import ManageInfluencers from "./pages/ManageInfluencers";
-import CampaignDetails from './pages/CampaignDetails';
-import ProtectedAdminRoute from "./components/ProtectedAdminRoute";
+import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
 import config from "./config";
 
 function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [activeView, setActiveView] = useState('dashboard');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loginData, setLoginData] = useState({ username: '', password: '' });
 
@@ -45,19 +36,12 @@ function App() {
         })
       });
 
-      // Check if response is JSON
-      const contentType = response.headers.get("content-type");
-      if (!contentType || !contentType.includes("application/json")) {
-        throw new Error(`Server returned non-JSON response: ${await response.text()}`);
-      }
-
       const data = await response.json();
       
       if (!response.ok) {
         throw new Error(data.error || 'Login failed');
       }
 
-      // Store token and set authenticated state
       localStorage.setItem('adminToken', data.token);
       localStorage.setItem('adminUsername', data.username);
       setIsAuthenticated(true);
@@ -73,16 +57,6 @@ function App() {
     localStorage.removeItem('adminToken');
     setIsAuthenticated(false);
   };
-
-  if (loading && !isAuthenticated) {
-    return (
-      <div className="d-flex justify-content-center align-items-center" style={{ height: '100vh' }}>
-        <Spinner animation="border" role="status">
-          <span className="visually-hidden">Loading...</span>
-        </Spinner>
-      </div>
-    );
-  }
 
   // Login screen
   if (!isAuthenticated) {
@@ -130,53 +104,11 @@ function App() {
         <div className="d-flex flex-column p-4 bg-dark text-white" style={{ width: "280px", height: "100vh" }}>
           <h2 className="text-center mb-4">Admin Dashboard</h2>
           <Nav className="flex-column">
-            <Nav.Link 
-              as={Link} 
-              to="/" 
-              className={`text-white ${activeView === 'dashboard' ? 'active bg-primary p-2 rounded' : ''}`}
-              onClick={() => setActiveView('dashboard')}
-            >
+            <Nav.Link as={Link} to="/" className="text-white">
               Dashboard
             </Nav.Link>
-            <Nav.Link 
-              as={Link} 
-              to="/admin/campaigns" 
-              className={`text-white ${activeView === 'campaigns' ? 'active bg-success p-2 rounded' : ''}`}
-              onClick={() => setActiveView('campaigns')}
-            >
-              Manage Campaigns
-            </Nav.Link>
-            <Nav.Link 
-              as={Link} 
-              to="/admin/add-influencer" 
-              className={`text-white ${activeView === 'add-influencer' ? 'active bg-danger p-2 rounded' : ''}`}
-              onClick={() => setActiveView('add-influencer')}
-            >
-              Add Influencer
-            </Nav.Link>
-            <Nav.Link 
-              as={Link} 
-              to="/admin/bookings" 
-              className={`text-white ${activeView === 'bookings' ? 'active bg-warning p-2 rounded' : ''}`}
-              onClick={() => setActiveView('bookings')}
-            >
-              Manage Bookings
-            </Nav.Link>
-            <Nav.Link 
-              as={Link} 
-              to="/admin/users" 
-              className={`text-white ${activeView === 'users' ? 'active bg-info p-2 rounded' : ''}`}
-              onClick={() => setActiveView('users')}
-            >
-              Manage Users
-            </Nav.Link>
-            <Nav.Link 
-              as={Link} 
-              to="/admin/influencers" 
-              className={`text-white ${activeView === 'influencers' ? 'active bg-info p-2 rounded' : ''}`}
-              onClick={() => setActiveView('influencers')}
-            >
-              Manage Influencers
+            <Nav.Link as={Link} to="/campaigns" className="text-white">
+              Campaigns
             </Nav.Link>
             <div className="mt-auto">
               <Button 
@@ -193,18 +125,8 @@ function App() {
         {/* Main Content */}
         <Container fluid className="p-4">
           <Routes>
-            <Route path="/" element={
-              <ProtectedAdminRoute>
-                <AdminDashboard />
-              </ProtectedAdminRoute>
-            } />
-            <Route path="/admin/campaigns" element={<ManageCampaigns />} />
-            <Route path="/admin/users" element={<ManageUsers />} />
-            <Route path="/admin/add-influencer" element={<AddInfluencer />} />
-            <Route path="/admin/bookings" element={<AdminDashboard />} />
-            <Route path="/admin/bookings/:bookingId" element={<BookingDetails />} />
-            <Route path="/admin/influencers" element={<ManageInfluencers />} />
-            <Route path="/admin/campaigns/:id" element={<CampaignDetails />} />
+            <Route path="/" element={<div>Dashboard Home</div>} />
+            <Route path="/campaigns" element={<div>Campaigns List</div>} />
           </Routes>
         </Container>
       </div>
