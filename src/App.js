@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import 'bootstrap/dist/css/bootstrap.min.css';
 import { Container, Nav, Alert, Spinner, Form, Button, Card } from "react-bootstrap";
 import { BrowserRouter as Router, Routes, Route, Link, Navigate, useNavigate } from "react-router-dom";
 import AdminDashboard from "./pages/AdminDashboard";
