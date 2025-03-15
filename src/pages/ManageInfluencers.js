@@ -185,23 +185,51 @@ const ManageInfluencers = () => {
       const response = await fetch(`${config.API_URL}/api/admin/influencers/${selectedInfluencer.id}/edit/`, {
         method: 'PUT',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('adminToken')}`,
+          'Accept': 'application/json'
         },
         body: JSON.stringify(formData)
       });
 
-      const responseData = await response.json();
-      console.log("Server response:", responseData);
-      console.log("Social platforms in response:", responseData.social_platforms);
-      console.log("Social media URLs in response:", {
-        instagram: responseData.instagram_url,
-        tiktok: responseData.tiktok_url,
-        youtube: responseData.youtube_url,
-        twitter: responseData.twitter_url
-      });
+      // Try to get the response as JSON
+      let responseData;
+      try {
+        responseData = await response.json();
+        console.log("Server response:", responseData);
+      } catch (e) {
+        // If it's not JSON, get the text
+        const text = await response.text();
+        console.error("Non-JSON response:", text);
+        responseData = { error: text };
+      }
 
       if (!response.ok) {
-        throw new Error(responseData.error || 'Failed to update influencer');
+        // Log detailed error information
+        console.error("Error response status:", response.status);
+        console.error("Error response data:", responseData);
+        
+        // Extract error message from response
+        let errorMessage = 'Failed to update influencer';
+        if (responseData.error) {
+          errorMessage = responseData.error;
+        } else if (responseData.detail) {
+          errorMessage = responseData.detail;
+        } else if (typeof responseData === 'object') {
+          // If it's an object with field errors, format them
+          errorMessage = Object.entries(responseData)
+            .map(([field, errors]) => {
+              if (Array.isArray(errors)) {
+                return `${field}: ${errors.join(', ')}`;
+              } else if (typeof errors === 'string') {
+                return `${field}: ${errors}`;
+              }
+              return `${field}: Invalid value`;
+            })
+            .join('\n');
+        }
+        
+        throw new Error(errorMessage);
       }
 
       // Success
@@ -209,7 +237,7 @@ const ManageInfluencers = () => {
       setShowEditModal(false);
     } catch (error) {
       console.error("Error updating influencer:", error);
-      setError(error.message);
+      setError(error.message || "Failed to update influencer");
     }
   };
 
