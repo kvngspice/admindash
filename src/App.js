@@ -36,7 +36,8 @@ function App() {
     setError(null);
 
     try {
-      const response = await fetch(`${config.API_URL}/api/auth/admin-login/`, {
+      // Try the standard login endpoint first
+      const response = await fetch(`${config.API_URL}/api/auth/login/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -44,7 +45,8 @@ function App() {
         },
         body: JSON.stringify({
           username: loginData.username,
-          password: loginData.password
+          password: loginData.password,
+          role: 'admin' // Add role parameter
         })
       });
 
@@ -75,6 +77,13 @@ function App() {
   const handleLogout = () => {
     localStorage.removeItem('adminToken');
     setIsAuthenticated(false);
+  };
+
+  const handleDemoLogin = () => {
+    // For demo purposes only
+    localStorage.setItem('adminToken', 'demo-token');
+    localStorage.setItem('adminUsername', 'demo-admin');
+    setIsAuthenticated(true);
   };
 
   if (loading && !isAuthenticated) {
@@ -119,6 +128,17 @@ function App() {
               <Button variant="primary" className="w-100">
                 {loading ? 'Logging in...' : 'Login'}
               </Button>
+              
+              <div className="mt-3 text-center">
+                <p>For demonstration purposes:</p>
+                <Button 
+                  variant="secondary" 
+                  onClick={handleDemoLogin}
+                  className="mt-2"
+                >
+                  Demo Login
+                </Button>
+              </div>
             </form>
           </div>
         </div>
