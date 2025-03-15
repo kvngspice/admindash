@@ -1,20 +1,24 @@
 import React, { useState, useEffect } from "react";
-import { Container, Nav, Alert, Spinner, Form, Button, Card } from "react-bootstrap";
-import { BrowserRouter as Router, Routes, Route, Link, Navigate, useNavigate } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
 import AdminDashboard from "./pages/AdminDashboard";
-import ManageCampaigns from "./pages/ManageCampaigns";
-import ManageUsers from "./pages/ManageUsers";
-import AddInfluencer from "./pages/AddInfluencer";
-import BookingDetails from './pages/BookingDetails';
-import ManageInfluencers from "./pages/ManageInfluencers";
-import CampaignDetails from './pages/CampaignDetails';
-import ProtectedAdminRoute from "./components/ProtectedAdminRoute";
 import config from "./config";
+
+// Simple custom components to replace react-bootstrap
+const Spinner = () => (
+  <div className="spinner" style={{ border: '4px solid #f3f3f3', borderTop: '4px solid #3498db', borderRadius: '50%', width: '24px', height: '24px', animation: 'spin 2s linear infinite' }}></div>
+);
+
+const Alert = ({ variant, children }) => (
+  <div className={`alert alert-${variant}`}>{children}</div>
+);
+
+const Button = ({ variant, onClick, children, className }) => (
+  <button className={`btn btn-${variant} ${className || ''}`} onClick={onClick}>{children}</button>
+);
 
 function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [activeView, setActiveView] = useState('dashboard');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loginData, setLoginData] = useState({ username: '', password: '' });
 
@@ -76,9 +80,7 @@ function App() {
   if (loading && !isAuthenticated) {
     return (
       <div className="d-flex justify-content-center align-items-center" style={{ height: '100vh' }}>
-        <Spinner animation="border" role="status">
-          <span className="visually-hidden">Loading...</span>
-        </Spinner>
+        <Spinner />
       </div>
     );
   }
@@ -86,39 +88,41 @@ function App() {
   // Login screen
   if (!isAuthenticated) {
     return (
-      <Container className="d-flex justify-content-center align-items-center" style={{ height: '100vh' }}>
-        <Card style={{ width: '400px' }} className="shadow">
-          <Card.Header className="bg-dark text-white text-center">
+      <div className="container d-flex justify-content-center align-items-center" style={{ height: '100vh' }}>
+        <div className="card" style={{ width: '400px' }}>
+          <div className="card-header bg-dark text-white text-center">
             <h4>Admin Dashboard Login</h4>
-          </Card.Header>
-          <Card.Body>
+          </div>
+          <div className="card-body">
             {error && <Alert variant="danger">{error}</Alert>}
-            <Form onSubmit={handleLogin}>
-              <Form.Group className="mb-3">
-                <Form.Label>Username</Form.Label>
-                <Form.Control 
+            <form onSubmit={handleLogin}>
+              <div className="mb-3">
+                <label>Username</label>
+                <input 
                   type="text" 
+                  className="form-control"
                   value={loginData.username}
                   onChange={(e) => setLoginData({...loginData, username: e.target.value})}
                   required
                 />
-              </Form.Group>
-              <Form.Group className="mb-3">
-                <Form.Label>Password</Form.Label>
-                <Form.Control 
+              </div>
+              <div className="mb-3">
+                <label>Password</label>
+                <input 
                   type="password" 
+                  className="form-control"
                   value={loginData.password}
                   onChange={(e) => setLoginData({...loginData, password: e.target.value})}
                   required
                 />
-              </Form.Group>
-              <Button variant="primary" type="submit" className="w-100">
+              </div>
+              <Button variant="primary" className="w-100">
                 {loading ? 'Logging in...' : 'Login'}
               </Button>
-            </Form>
-          </Card.Body>
-        </Card>
-      </Container>
+            </form>
+          </div>
+        </div>
+      </div>
     );
   }
 
@@ -128,55 +132,13 @@ function App() {
         {/* Sidebar Navigation */}
         <div className="d-flex flex-column p-4 bg-dark text-white" style={{ width: "280px", height: "100vh" }}>
           <h2 className="text-center mb-4">Admin Dashboard</h2>
-          <Nav className="flex-column">
-            <Nav.Link 
-              as={Link} 
-              to="/" 
-              className={`text-white ${activeView === 'dashboard' ? 'active bg-primary p-2 rounded' : ''}`}
-              onClick={() => setActiveView('dashboard')}
-            >
-              Dashboard
-            </Nav.Link>
-            <Nav.Link 
-              as={Link} 
-              to="/admin/campaigns" 
-              className={`text-white ${activeView === 'campaigns' ? 'active bg-success p-2 rounded' : ''}`}
-              onClick={() => setActiveView('campaigns')}
-            >
-              Manage Campaigns
-            </Nav.Link>
-            <Nav.Link 
-              as={Link} 
-              to="/admin/add-influencer" 
-              className={`text-white ${activeView === 'add-influencer' ? 'active bg-danger p-2 rounded' : ''}`}
-              onClick={() => setActiveView('add-influencer')}
-            >
-              Add Influencer
-            </Nav.Link>
-            <Nav.Link 
-              as={Link} 
-              to="/admin/bookings" 
-              className={`text-white ${activeView === 'bookings' ? 'active bg-warning p-2 rounded' : ''}`}
-              onClick={() => setActiveView('bookings')}
-            >
-              Manage Bookings
-            </Nav.Link>
-            <Nav.Link 
-              as={Link} 
-              to="/admin/users" 
-              className={`text-white ${activeView === 'users' ? 'active bg-info p-2 rounded' : ''}`}
-              onClick={() => setActiveView('users')}
-            >
-              Manage Users
-            </Nav.Link>
-            <Nav.Link 
-              as={Link} 
-              to="/admin/influencers" 
-              className={`text-white ${activeView === 'influencers' ? 'active bg-info p-2 rounded' : ''}`}
-              onClick={() => setActiveView('influencers')}
-            >
-              Manage Influencers
-            </Nav.Link>
+          <nav className="flex-column">
+            <Link to="/" className="text-white mb-2 p-2">Dashboard</Link>
+            <Link to="/admin/campaigns" className="text-white mb-2 p-2">Manage Campaigns</Link>
+            <Link to="/admin/add-influencer" className="text-white mb-2 p-2">Add Influencer</Link>
+            <Link to="/admin/bookings" className="text-white mb-2 p-2">Manage Bookings</Link>
+            <Link to="/admin/users" className="text-white mb-2 p-2">Manage Users</Link>
+            <Link to="/admin/influencers" className="text-white mb-2 p-2">Manage Influencers</Link>
             <div className="mt-auto">
               <Button 
                 variant="outline-light" 
@@ -186,26 +148,20 @@ function App() {
                 Logout
               </Button>
             </div>
-          </Nav>
+          </nav>
         </div>
 
         {/* Main Content */}
-        <Container fluid className="p-4">
+        <div className="container p-4">
           <Routes>
-            <Route path="/" element={
-              <ProtectedAdminRoute>
-                <AdminDashboard />
-              </ProtectedAdminRoute>
-            } />
-            <Route path="/admin/campaigns" element={<ManageCampaigns />} />
-            <Route path="/admin/users" element={<ManageUsers />} />
-            <Route path="/admin/add-influencer" element={<AddInfluencer />} />
-            <Route path="/admin/bookings" element={<AdminDashboard />} />
-            <Route path="/admin/bookings/:bookingId" element={<BookingDetails />} />
-            <Route path="/admin/influencers" element={<ManageInfluencers />} />
-            <Route path="/admin/campaigns/:id" element={<CampaignDetails />} />
+            <Route path="/" element={<AdminDashboard />} />
+            <Route path="/admin/campaigns" element={<div>Campaigns Management</div>} />
+            <Route path="/admin/users" element={<div>User Management</div>} />
+            <Route path="/admin/add-influencer" element={<div>Add Influencer</div>} />
+            <Route path="/admin/bookings" element={<div>Bookings Management</div>} />
+            <Route path="/admin/influencers" element={<div>Influencer Management</div>} />
           </Routes>
-        </Container>
+        </div>
       </div>
     </Router>
   );
