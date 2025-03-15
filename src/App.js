@@ -10,6 +10,7 @@ import BookingDetails from './pages/BookingDetails';
 import ManageInfluencers from "./pages/ManageInfluencers";
 import CampaignDetails from './pages/CampaignDetails';
 import ProtectedAdminRoute from "./components/ProtectedAdminRoute";
+import InfluencerUpload from './components/InfluencerUpload';
 import config from "./config";
 
 function App() {
@@ -178,6 +179,14 @@ function App() {
             >
               Manage Influencers
             </Nav.Link>
+            <Nav.Link 
+              as={Link} 
+              to="/admin/upload-influencers" 
+              className={`text-white ${activeView === 'upload-influencers' ? 'active bg-info p-2 rounded' : ''}`}
+              onClick={() => setActiveView('upload-influencers')}
+            >
+              Upload Influencers
+            </Nav.Link>
             <div className="mt-auto">
               <Button 
                 variant="outline-light" 
@@ -205,6 +214,11 @@ function App() {
             <Route path="/admin/bookings/:bookingId" element={<BookingDetails />} />
             <Route path="/admin/influencers" element={<ManageInfluencers />} />
             <Route path="/admin/campaigns/:id" element={<CampaignDetails />} />
+            <Route path="/admin/upload-influencers" element={
+              <ProtectedAdminRoute>
+                <InfluencerUpload />
+              </ProtectedAdminRoute>
+            } />
           </Routes>
         </Container>
       </div>
